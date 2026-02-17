@@ -1,0 +1,8 @@
+FROM iamjothees/laravel-image:php8.5
+
+RUN source $NVM_DIR/nvm.sh \
+    && nvm install 22 \
+    && nvm alias default 22 \
+    && nvm use default
+
+EXPOSE 5173
