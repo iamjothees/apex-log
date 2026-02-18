@@ -14,29 +14,28 @@ jobs:
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
         with:
-          php-version: '8.4'
+          php-version: '8.3'
           extensions: mbstring, xml, bcmath, curl, zip
 
-      - name: Install Dependencies
+      - name: Install Dependencies & Build Assets
         run: |
           cd src
           npm install
           npm run build
           composer install --no-dev --optimize-autoloader
-          zip -r ../apex-log.zip .
+          zip -r ../deploy.zip . 
 
-      - name: 🚀 Deploy via Rsync
+      - name: 🚀 Upload Zip via SCP
         uses: appleboy/scp-action@v0.1.7
         with:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           port: ${{ secrets.SSH_PORT }}
-          source: "src/*"
+          source: "deploy.zip" # Only upload the zip file
           target: "~/app-repos/apex-log/"
-          strip_components: 1 # This moves contents of /src directly into /apexlog
 
-      - name: 🛠️ Execute Remote Commands (Migrations/Cache)
+      - name: 🛠️ Unzip and Cleanup
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.SSH_HOST }}
@@ -45,7 +44,8 @@ jobs:
           port: ${{ secrets.SSH_PORT }}
           script: |
             cd ~/app-repos/apex-log/
-            unzip apex-log.zip
-            rm apex-log.zip
+            # -o overwrites without asking, -q is quiet
+            unzip -o deploy.zip 
+            rm deploy.zip
             php artisan migrate --force
             php artisan optimize
