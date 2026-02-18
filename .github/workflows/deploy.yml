@@ -1,4 +1,4 @@
-name: Deploy Src to Shared Hosting
+name: Production Deployment (SSH)
 
 on:
   push:
@@ -15,27 +15,37 @@ jobs:
         uses: shivammathur/setup-php@v2
         with:
           php-version: '8.4'
+          extensions: mbstring, xml, bcmath, curl, zip
 
       - name: Install Dependencies
-        # We run this inside the src folder
         run: |
           cd src
-          composer install --no-dev --optimize-autoloader
           npm install
           npm run build
+          composer install --no-dev --optimize-autoloader
+          zip -r ../apex-log.zip .
 
-      - name: 🚀 Sync Laravel Src via FTP
-        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+      - name: 🚀 Deploy via Rsync
+        uses: appleboy/scp-action@v0.1.7
         with:
-          server: ${{ secrets.FTP_SERVER }}
-          username: ${{ secrets.FTP_USERNAME }}
-          password: ${{ secrets.FTP_PASSWORD }}
-          # local-dir tells the action to ONLY upload what is inside /src
-          local-dir: ./src/ 
-          server-dir: ./
-          exclude: |
-            **/.git*
-            **/node_modules/**
-            **/storage/**
-            .env
-            tests/
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: ${{ secrets.SSH_PORT }}
+          source: "src/*"
+          target: "~/app-repos/apex-log/"
+          strip_components: 1 # This moves contents of /src directly into /apexlog
+
+      - name: 🛠️ Execute Remote Commands (Migrations/Cache)
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: ${{ secrets.SSH_PORT }}
+          script: |
+            cd ~/app-repos/apex-log/
+            unzip apex-log.zip
+            rm apex-log.zip
+            php artisan migrate --force
+            php artisan optimize
