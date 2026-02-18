@@ -17,7 +17,7 @@ jobs:
           php-version: '8.4'
           extensions: mbstring, xml, bcmath, curl, zip
 
-      - name: Install Dependencies & Build Assets
+      - name: Install Dependencies & Build Assets  
         run: |
           cd src
           npm install
