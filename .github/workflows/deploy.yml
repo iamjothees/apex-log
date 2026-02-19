@@ -46,6 +46,6 @@ jobs:
             # -o overwrites without asking, -q is quiet
             unzip -o deploy.zip 
             rm deploy.zip
-            composer update --no-dev --optimize-autoloader
-            php artisan migrate --force
+            composer update
             php artisan optimize
+            php artisan migrate --force
