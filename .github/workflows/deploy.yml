@@ -17,12 +17,11 @@ jobs:
           php-version: '8.4'
           extensions: mbstring, xml, bcmath, curl, zip
 
-      - name: Install Dependencies & Build Assets  
+      - name: Install Node Dependencies & Build Assets  
         run: |
           cd src
           npm install
           npm run build
-          composer install --no-dev --optimize-autoloader
           zip -r ../deploy.zip . 
 
       - name: 🚀 Upload Zip via SCP
@@ -35,7 +34,7 @@ jobs:
           source: "deploy.zip" # Only upload the zip file
           target: "~/app-repos/apex-log/"
 
-      - name: 🛠️ Unzip and Cleanup
+      - name: 🛠️ Unzip, Cleanup & Run Migrations
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.SSH_HOST }}
@@ -47,3 +46,6 @@ jobs:
             # -o overwrites without asking, -q is quiet
             unzip -o deploy.zip 
             rm deploy.zip
+            composer update --no-dev --optimize-autoloader
+            php artisan migrate --force
+            php artisan optimize
