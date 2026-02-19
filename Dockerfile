@@ -1,4 +1,4 @@
-FROM iamjothees/laravel-image:php8.5
+FROM iamjothees/laravel-image:php8.3
 
 RUN source $NVM_DIR/nvm.sh \
     && nvm install 22 \
